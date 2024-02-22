@@ -14,11 +14,11 @@ screen = pygame.display.set_mode(size)
  
 pygame.display.set_caption("Otis' Computer Science Project")
 
-enemy_image = pygame.image.load()
+enemy_image = pygame.image.load('enemy_1.png').convert_alpha()
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, image, position) -> None:
+    def __init__(self, image, position):
         super().__init__()
 
         self.image = image
@@ -31,6 +31,18 @@ class Enemy(pygame.sprite.Sprite):
     
     def move(self):
         self.rect.x += 1
+
+
+enemy = Enemy(enemy_image, (350, 250))
+
+all_sprites = pygame.sprite.Group()
+
+enemy_group = pygame.sprite.Group()
+
+for _ in range(1):
+    enemy = Enemy(enemy_image, (350, 250))
+    enemy_group.add(enemy)
+    all_sprites.add(enemy)
  
 # Loop until the user clicks the close button.
 done = False
@@ -58,6 +70,8 @@ while not done:
  
     # --- Drawing code should go here
  
+    enemy_group.draw(screen)
+
     # --- Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
  
