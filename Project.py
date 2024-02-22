@@ -58,7 +58,9 @@ while not done:
             done = True
  
     # --- Game logic should go here
- 
+    
+    enemy_group.update()
+    
     # --- Screen-clearing code goes here
  
     # Here, we clear the screen to white. Don't put other drawing commands
