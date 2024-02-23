@@ -1,5 +1,7 @@
 import pygame
- 
+import math
+from pygame.math import Vector2
+
 # Define some colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -22,9 +24,10 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, image, waypoints):
         super().__init__()
 
-        self.image = image
         self.waypoints = waypoints
-        self.position = self.waypoints[0]
+        self.position = Vector2(self.waypoints[0])
+        self.target_waypoint = 1
+        self.image = image
         self.rect = self.image.get_rect()
         self.rect.center = self.position
 
@@ -33,7 +36,10 @@ class Enemy(pygame.sprite.Sprite):
         self.move()
     
     def move(self):
-        self.rect.x += 1
+        self.target = Vector2(self.waypoints[self.target_waypoint])
+        self.movement = self.target - self.position
+        self.position += self.movement.normalize()
+        self.rect.center = self.position
 
 
 waypoints = [
