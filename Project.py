@@ -52,8 +52,12 @@ class Enemy(pygame.sprite.Sprite):
         dist = self.movement.length()
         
             
-
-
+class Tower(pygame.sprite.Sprite):
+    def __init__(self,image, position) -> None:
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.center = position
 
 waypoints = [
     (000, 300),
@@ -65,14 +69,11 @@ waypoints = [
 
 ]
 
-enemy = Enemy(enemy_image, waypoints)
-
 all_sprites = pygame.sprite.Group()
 
 enemy_group = pygame.sprite.Group()
 
-
-
+tower_group = pygame.sprite.Group()
 
 enemy = Enemy(enemy_image, waypoints)
 enemy_group.add(enemy)
