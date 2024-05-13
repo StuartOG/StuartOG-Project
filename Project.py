@@ -53,9 +53,12 @@ class Enemy(pygame.sprite.Sprite):
         
             
 class Tower(pygame.sprite.Sprite):
-    def __init__(self,image, position) -> None:
+    def __init__(self, s_width, s_length, position) -> None:
         super().__init__()
-        self.image = image
+        self.width = s_width
+        self.length = s_length
+        self.image = pygame.Surface([self.width, self.length])
+        self.image.fill(BLACK) 
         self.rect = self.image.get_rect()
         self.rect.center = position
 
@@ -78,7 +81,7 @@ tower_group = pygame.sprite.Group()
 enemy = Enemy(enemy_image, waypoints)
 enemy_group.add(enemy)
 all_sprites.add(enemy)
- 
+
 # Loop until the user clicks the close button.
 done = False
  
@@ -91,7 +94,12 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
- 
+        #mouse click
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+            tower = Tower(40, 30, mouse_pos)
+            tower_group.add(tower)
+    
     # --- Game logic should go here
     
     enemy_group.update()
@@ -109,7 +117,7 @@ while not done:
     
     pygame.draw.lines(screen, BLACK, False, waypoints)
     enemy_group.draw(screen)
-
+    tower_group.draw(screen)
 
     # --- Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
