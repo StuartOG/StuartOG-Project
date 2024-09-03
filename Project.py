@@ -74,6 +74,7 @@ class Tower(pygame.sprite.Sprite):
         self.range_rect = self.range_image.get_rect()
         self.range_rect.center = self.rect.center
 
+    #drawing function for transparent range circle
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
@@ -86,6 +87,7 @@ class Buttons(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.topleft = (x_pos, y_pos)
     
+
     def draw(self, surface):
         action = False
         pos = pygame.mouse.get_pos()
@@ -155,8 +157,7 @@ while not done:
     enemy_group.draw(screen)
     tower_group.draw(screen)
     for tower in tower_group:
-        Tower.draw(screen)
-    tower_button.draw(screen)
+        tower.draw(screen)
 
 
     # --- Go ahead and update the screen with what we've drawn.
