@@ -80,10 +80,11 @@ class Tower(pygame.sprite.Sprite):
 
 #creating buttons
 class Buttons(pygame.sprite.Sprite):
-    def __init__(self, x_pos, y_pos):
+    def __init__(self, x_pos, y_pos, s_colour):
         super().__init__()
         self.image = pygame.Surface([125, 50])
-        self.image.fill(RED)
+        self.colour = s_colour
+        self.image.fill(s_colour)
         self.rect = self.image.get_rect()
         self.rect.topleft = (x_pos, y_pos)
     
@@ -96,6 +97,8 @@ class Buttons(pygame.sprite.Sprite):
             if pygame.mouse.get_pressed()[0] == 1:
                 action = True
         return action
+    
+
 waypoints = [
     (000, 300),
     (150, 300),
@@ -117,9 +120,9 @@ enemy = Enemy(enemy_image, waypoints)
 enemy_group.add(enemy)
 all_sprites.add(enemy)
 
-tower_button = Buttons(750, 50)
-
+tower_button = Buttons(750, 50, RED)
 all_sprites.add(tower_button)
+
 # Loop until the user clicks the close button.
 done = False
  
@@ -158,7 +161,7 @@ while not done:
     tower_group.draw(screen)
     for tower in tower_group:
         tower.draw(screen)
-
+    tower_button.draw(screen)
 
     # --- Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
