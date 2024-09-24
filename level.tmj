@@ -1,0 +1,111 @@
+{ "compressionlevel":-1,
+ "height":12,
+ "infinite":false,
+ "layers":[
+        {
+         "data":[25, 25, 25, 25, 25, 25, 25, 25, 25, 26, 24, 25, 25, 25,
+            25, 25, 25, 25, 25, 25, 25, 25, 25, 26, 24, 25, 25, 25,
+            25, 25, 4, 48, 48, 48, 48, 48, 48, 49, 24, 25, 25, 25,
+            25, 25, 26, 1, 2, 2, 2, 2, 2, 2, 28, 25, 25, 25,
+            25, 25, 26, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+            25, 25, 26, 24, 25, 25, 4, 48, 48, 48, 48, 5, 25, 25,
+            25, 25, 26, 47, 48, 48, 49, 1, 2, 2, 3, 24, 25, 25,
+            25, 25, 27, 2, 2, 2, 2, 28, 25, 25, 26, 24, 25, 25,
+            25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 26, 24, 25, 25,
+            48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 49, 24, 25, 25,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 28, 25, 25,
+            25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25],
+         "height":12,
+         "id":1,
+         "name":"Tile Layer 1",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":14,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":2,
+         "name":"Object Layer 1",
+         "objects":[
+                {
+                 "height":0,
+                 "id":1,
+                 "name":"",
+                 "polyline":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":-2,
+                         "y":190
+                        }, 
+                        {
+                         "x":-448,
+                         "y":190
+                        }, 
+                        {
+                         "x":-450,
+                         "y":445
+                        }, 
+                        {
+                         "x":-193,
+                         "y":446
+                        }, 
+                        {
+                         "x":-193,
+                         "y":381
+                        }, 
+                        {
+                         "x":64,
+                         "y":381
+                        }, 
+                        {
+                         "x":61,
+                         "y":637
+                        }, 
+                        {
+                         "x":-640,
+                         "y":639
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":641,
+                 "y":2
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }],
+ "nextlayerid":3,
+ "nextobjectid":2,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tiledversion":"1.11.0",
+ "tileheight":64,
+ "tilesets":[
+        {
+         "columns":23,
+         "firstgid":1,
+         "image":"..\/..\/..\/..\/..\/Downloads\/kenney_tower-defense-top-down\/Tilesheet\/towerDefense_tilesheet.png",
+         "imageheight":832,
+         "imagewidth":1472,
+         "margin":0,
+         "name":"tile map",
+         "spacing":0,
+         "tilecount":299,
+         "tileheight":64,
+         "tilewidth":64
+        }],
+ "tilewidth":64,
+ "type":"map",
+ "version":"1.10",
+ "width":14
+}
