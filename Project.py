@@ -61,7 +61,7 @@ class Map():
         for layer in self.level_data["layers"]:
             if layer["name"] == "Tile Layer 1":
                 self.tile_map = layer["data"]
-                print(self.tile_map)
+                
 
     
     def draw(self, surface):
@@ -158,6 +158,16 @@ class Tower(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
+        #creating transparent circle to show range
+        # self.range_image = pygame.Surface((self.range * 2, self.range * 2))
+        # self.range_image.fill((0, 0, 0))
+        # self.range_image.set_colorkey((0, 0, 0))
+        # pygame.draw.circle(self.range_image, GREY, (self.range, self.range), self.range)
+        # self.range_image.set_alpha(100)
+        # self.range_rect = self.range_image.get_rect()
+        # self.range_rect.center = self.rect.center
+
+
     #extracts images from sprite sheet
     def load_images(self):
         size = self.sprite_sheet.get_height()
@@ -186,14 +196,7 @@ class Tower(pygame.sprite.Sprite):
             self.play_animation()
 
         #creating transparent circle to show range
-        self.range_image = pygame.Surface((self.range * 2, self.range * 2))
-        self.range_image.fill((0, 0, 0))
-        self.range_image.set_colorkey((0, 0, 0))
-        pygame.draw.circle(self.range_image, GREY, (self.range, self.range), self.range)
-        self.range_image.set_alpha(100)
-        self.range_rect = self.range_image.get_rect()
-        self.range_rect.center = self.rect.center
-
+    
     #drawing function for transparent range circle
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -248,12 +251,15 @@ waypoints = [
 enemy = Enemy(enemy_image, waypoints)
 
 
-
+#adding enemy to the group
 enemy_group.add(enemy)
+
 all_sprites.add(enemy)
 
-
+#creating button to place the tower
 tower_button = Buttons(cols*pixel_size + 30, 120, buy_turret_image, True)
+
+#creating button to cancel placing the tower
 cancel_button = Buttons(cols*pixel_size + 50, 180, cancel_turret_image, True)
 
 
@@ -271,8 +277,10 @@ while not done:
             done = True
         
     # --- Game logic should go here
-    
+    #updating all sprites
     all_sprites.update()
+
+    #updating towers
     tower_group.update()
     
     # --- Screen-clearing code goes here
@@ -312,6 +320,7 @@ while not done:
         mouse_pos = pygame.mouse.get_pos()
         #check if mouse is on the game area
         if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
+            #checks if player can place turret
             if placing_turrets == True:
                 create_turret(mouse_pos)
 
