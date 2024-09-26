@@ -20,15 +20,24 @@ side_panel = 200
 
 size = (cols*pixel_size + side_panel, rows*pixel_size)
 screen = pygame.display.set_mode(size)
+
+animation_steps = 8
+animation_delay = 15
  
 pygame.display.set_caption("Otis' Computer Science Project")
 
 #game variables
 placing_turrets = False
 
+#load json data for level
+with open('level.tmj') as file:
+    world_data = json.load(file)
+
 #importing the enemy image
 #map
 map_image = pygame.image.load('assets/levelv3.png').convert_alpha()
+#turret spritesheets
+turret_sheet = pygame.image.load('assets/turret_1.png').convert_alpha()
 #cursor turret
 cursor_turret_image = pygame.image.load('assets/cursor_turret.png').convert_alpha()
 #enemy
@@ -38,19 +47,46 @@ buy_turret_image = pygame.image.load('assets/buy_turret.png').convert_alpha()
 cancel_turret_image = pygame.image.load('assets/cancel.png').convert_alpha()
 
 
+
 #creating map class
 class Map():
-    def __init__(self, map_image):
+    def __init__(self, data, map_image):
+        self.tile_map = []
+        self.level_data = data
         self.image = map_image
        
     #end constructor
+    def process_data(self):
+        #look through data to extract relevant info
+        for layer in self.level_data["layers"]:
+            if layer["name"] == "Tile Layer 1":
+                self.tile_map = layer["data"]
+                print(self.tile_map)
 
+    
     def draw(self, surface):
         surface.blit(self.image, (0, 0))
 
 #create map
-world = Map(map_image)
+world = Map(world_data, map_image)
+world.process_data()
 
+def create_turret(mouse_pos):
+    mouse_tile_x = mouse_pos[0] // pixel_size
+    mouse_tile_y = mouse_pos[1] // pixel_size
+    #calculate the sequential number of the tile
+    mouse_tile_num = (mouse_tile_y * cols) + mouse_tile_x
+    #check if that tile is grass
+    if world.tile_map[mouse_tile_num] == 25:
+        #check that there isn't already a turret there
+        space_is_free = True
+        for turret in tower_group:
+            if (mouse_tile_x, mouse_tile_y) == (turret.tile_x, turret.tile_y):
+                space_is_free = False
+            #if it is a free space then create turret
+        if space_is_free == True:
+            new_turret = Tower(turret_sheet, mouse_tile_x, mouse_tile_y)
+            tower_group.add(new_turret)
 
 #Creating Enemy Class
 class Enemy(pygame.sprite.Sprite):
@@ -97,13 +133,57 @@ class Enemy(pygame.sprite.Sprite):
 
 #creating tower class            
 class Tower(pygame.sprite.Sprite):
-    def __init__(self, image, position) -> None:
+    def __init__(self, sprite_sheet, tile_x, tile_y) -> None:
         super().__init__()
         self.range = 90
+        self.cooldown = 1500
+        self.last_shot = pygame.time.get_ticks()
 
-        self.image = image
+        
+        #position variables
+        self.tile_x = tile_x
+        self.tile_y = tile_y
+        #calculate center coordinates
+        self.x = (self.tile_x + 0.5) * pixel_size
+        self.y = (self.tile_y + 0.5) * pixel_size
+
+        #animation variables
+        self.sprite_sheet = sprite_sheet
+        self.animation_list = self.load_images()
+        self.frame_index = 0
+        self.update_time = pygame.time.get_ticks()
+
+
+        self.image = self.animation_list[self.frame_index]
         self.rect = self.image.get_rect()
-        self.rect.center = position
+        self.rect.center = (self.x, self.y)
+
+    #extracts images from sprite sheet
+    def load_images(self):
+        size = self.sprite_sheet.get_height()
+        animation_list = []
+        for x in range(animation_steps):
+            temp = self.sprite_sheet.subsurface(x * size, 0, size, size)
+            animation_list.append(temp)
+        return animation_list
+    
+    
+
+    def play_animation(self):
+        #update image
+        self.image = self.animation_list[self.frame_index]
+        #check if enough time has passed since last update
+        if pygame.time.get_ticks() - self.update_time > animation_delay:
+            self.update_time = pygame.time.get_ticks()
+            self.frame_index += 1
+            #check if animation ahs finished
+            if self.frame_index >= len(self.animation_list):
+                self.frame_index = 0
+                self.last_shot = pygame.time.get_ticks()
+
+    def update(self):
+        if pygame.time.get_ticks() - self.last_shot > self.cooldown:
+            self.play_animation()
 
         #creating transparent circle to show range
         self.range_image = pygame.Surface((self.range * 2, self.range * 2))
@@ -189,20 +269,11 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
-        #mouse click
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = pygame.mouse.get_pos()
-
-            #checking if cursor is in the game area
-
-            if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
-                if placing_turrets == True:
-                    tower = Tower(cursor_turret_image, mouse_pos)
-                    tower_group.add(tower)
         
     # --- Game logic should go here
     
     all_sprites.update()
+    tower_group.update()
     
     # --- Screen-clearing code goes here
  
@@ -235,6 +306,14 @@ while not done:
     if placing_turrets == True:
         if cancel_button.draw(screen):
             placing_turrets     = False    
+
+    #mouse click
+    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        mouse_pos = pygame.mouse.get_pos()
+        #check if mouse is on the game area
+        if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
+            if placing_turrets == True:
+                create_turret(mouse_pos)
 
     # --- Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
