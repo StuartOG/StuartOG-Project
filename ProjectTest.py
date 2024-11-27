@@ -4,6 +4,7 @@ import math
 from pygame.math import Vector2
 import random
 
+
 # Define some colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -11,7 +12,7 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 GREY = (128, 128, 128)
 
-TURRET_DATA = [
+TOWER_DATA = [
     {   
         #1
         "range": 120,
@@ -27,14 +28,9 @@ TURRET_DATA = [
         "range": 160,
         "cooldown": 1000,
     },
-    {
-        #4
-        "range": 180,
-        "cooldown": 800,
-    }
 ]
 
-TURRET_MAXLVL = 4
+TOWER_MAXLVL = 3
 
 ENEMY_SPAWN_DATA = [
   {
@@ -191,13 +187,14 @@ screen = pygame.display.set_mode(size)
 
 animation_steps = 8
 animation_delay = 15
+animation_steps_shooting = 29
  
 pygame.display.set_caption("Otis' Computer Science Project")
 
 #game variables
 last_enemy_spawn = pygame.time.get_ticks()
-placing_turrets = False
-selected_turret = None
+placing_towers = False
+selected_tower = None
 
 #load json data for level
 with open('level.tmj') as file:
@@ -207,10 +204,9 @@ with open('level.tmj') as file:
 #map
 map_image = pygame.image.load('assets/levelv3.png').convert_alpha()
 #turret spritesheets
-turret_sheet = pygame.image.load('assets/turret_1.png').convert_alpha()
+tower_sheet = pygame.image.load('assets/towers_images.png').convert_alpha()
 #cursor turret
-
-cursor_turret_image = pygame.image.load('assets/cursor_turret.png').convert_alpha()
+cursor_tower_image = pygame.image.load('assets/cursor_tower.png').convert_alpha()
 #enemy
 enemy_images = {
     "tier 1" : pygame.image.load('assets/enemy_1.png').convert_alpha(),
@@ -218,12 +214,31 @@ enemy_images = {
     "tier 3" : pygame.image.load('assets/enemy_3.png').convert_alpha(),
     "tier 4" : pygame.image.load('assets/enemy_4.png').convert_alpha()
     }   
+
+
+weapon_spritesheets_idle = []
+for x in range(1, TOWER_MAXLVL+1):
+    weapon_idle_sheet = pygame.image.load(f'assets/lvl{x}weaponidle.PNG').convert_alpha(),
+    weapon_spritesheets_idle.append(weapon_idle_sheet)
+list(weapon_spritesheets_idle)
+
+weapon_spritesheets_shooting = []
+for x in range(1, TOWER_MAXLVL+1):
+    weapon_shooting_sheet = pygame.image.load(f'assets/lvl{x}weaponshooting.PNG').convert_alpha(),
+    weapon_spritesheets_shooting.append(weapon_shooting_sheet)
+list(weapon_spritesheets_shooting)
+
+tower_images = {
+    "lvl1" : pygame.image.load('assets/cursor_tower.png').convert_alpha(),
+    "lvl2" : pygame.image.load('assets/tower_lvl2.PNG').convert_alpha(),
+    "lvl3" : pygame.image.load('assets/tower_lvl3.PNG').convert_alpha(),
+}
 #buy turret button
-buy_turret_image = pygame.image.load('assets/buy_turret.png').convert_alpha()
+buy_tower_image = pygame.image.load('assets/buy_tower.png').convert_alpha()
 #cancel buying turret button
-cancel_turret_image = pygame.image.load('assets/cancel.png').convert_alpha()
+cancel_tower_image = pygame.image.load('assets/cancel.png').convert_alpha()
 #upgrade turret turret button
-upgrade_turret_image = pygame.image.load('assets/upgrade_turret.png').convert_alpha()
+upgrade_tower_image = pygame.image.load('assets/upgrade_tower.png').convert_alpha()
 
 
 
@@ -264,7 +279,7 @@ world = Map(world_data, map_image)
 world.process_data()
 world.process_enemies()
 
-def create_turret(mouse_pos):
+def create_tower(mouse_pos):
     mouse_tile_x = mouse_pos[0] // pixel_size
     mouse_tile_y = mouse_pos[1] // pixel_size
     #calculate the sequential number of the tile
@@ -273,20 +288,23 @@ def create_turret(mouse_pos):
     if world.tile_map[mouse_tile_num] == 25:
         #check that there isn't already a turret there
         space_is_free = True
-        for turret in tower_group:
-            if (mouse_tile_x, mouse_tile_y) == (turret.tile_x, turret.tile_y):
+        for tower in tower_group:
+            if (mouse_tile_x, mouse_tile_y) == (tower.tile_x, tower.tile_y):
                 space_is_free = False
             #if it is a free space then create turret
         if space_is_free == True:
-            new_turret = Tower(turret_sheet, mouse_tile_x, mouse_tile_y)
-            tower_group.add(new_turret)
+            tower_level = "lvl1"
+            new_tower = Tower(tower_level, tower_images, mouse_tile_x, mouse_tile_y)
+            tower_group.add(new_tower)
+            new_weapon = Weapons(weapon_spritesheets_idle, weapon_spritesheets_shooting, mouse_tile_x, mouse_tile_y)
+            weapons_group.add(new_weapon)
 
-def select_turret(mouse_pos):
+def select_tower(mouse_pos):
     mouse_tile_x = mouse_pos[0] // pixel_size
     mouse_tile_y = mouse_pos[1] // pixel_size
-    for turret in tower_group:
-        if (mouse_tile_x, mouse_tile_y) == (turret.tile_x, turret.tile_y):
-            return turret
+    for tower in tower_group:
+        if (mouse_tile_x, mouse_tile_y) == (tower.tile_x, tower.tile_y):
+            return tower
 
 
 #Creating Enemy Class
@@ -335,15 +353,10 @@ class Enemy(pygame.sprite.Sprite):
 
 #creating tower class            
 class Tower(pygame.sprite.Sprite):
-    def __init__(self, sprite_sheet, tile_x, tile_y) -> None:
+    def __init__(self, tower_level, images, tile_x, tile_y) -> None:
         super().__init__()
         self.upgrade_level = 1
-        self.range = TURRET_DATA[self.upgrade_level-1].get("range")
-        self.cooldown = TURRET_DATA[self.upgrade_level-1].get("cooldown")
-        self.last_shot = pygame.time.get_ticks()
-        self.selected = False
-        self.target = None
-        
+        self.angle = 0
         #position variables
         self.tile_x = tile_x
         self.tile_y = tile_y
@@ -351,20 +364,51 @@ class Tower(pygame.sprite.Sprite):
         self.x = (self.tile_x + 0.5) * pixel_size
         self.y = (self.tile_y + 0.5) * pixel_size
 
+        self.image = images.get(tower_level)
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+
+    def upgrade(self):
+        self.upgrade_level += 1
+
+class Weapons(pygame.sprite.Sprite):
+    def __init__(self, spritesheets_idle, spritesheets_shooting, tile_x, tile_y):
+        super().__init__()
+
         #animation variables
-        self.sprite_sheet = sprite_sheet
-        self.animation_list = self.load_images()
         self.frame_index = 0
         self.update_time = pygame.time.get_ticks()
+        self.upgrade_level = 1
+
+        #idle animation variables
+        self.sprite_sheet_idle = spritesheets_idle
+        self.animation_list_idle = self.load_images_idle(spritesheets_idle[self.upgrade_level-1])
+        #shooting animation variables
+        self.sprite_sheet_shooting = spritesheets_shooting
+        self.animation_list_shooting = self.load_images_shooting(self.sprite_sheet_shooting[self.upgrade_level-1])
+        #position variables
+        self.tile_x = tile_x
+        self.tile_y = tile_y
+        #calculate center coordinates
+        self.x = (self.tile_x + 0.5) * pixel_size
+        self.y = (self.tile_y + 0.5) * pixel_size
 
         #update image
         self.angle = 90
-        self. original_image = self.animation_list[self.frame_index]
+        self. original_image = self.animation_list_idle[self.frame_index]
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
-        #creating transparent circle to show range
+
+        self.upgrade_level = 1
+        self.range = TOWER_DATA[self.upgrade_level-1].get("range")
+        self.cooldown = TOWER_DATA[self.upgrade_level-1].get("cooldown")
+        self.last_shot = pygame.time.get_ticks()
+        self.selected = False
+        self.target = None
+
+        #set range
         self.range_image = pygame.Surface((self.range * 2, self.range * 2))
         self.range_image.fill((0, 0, 0))
         self.range_image.set_colorkey((0, 0, 0))
@@ -373,30 +417,38 @@ class Tower(pygame.sprite.Sprite):
         self.range_rect = self.range_image.get_rect()
         self.range_rect.center = self.rect.center
 
+    def play_idle_animation(self):
+        self.original_image = self.animation_list_idle[self.frame_index]
+        if self.frame_index >= len(self.animation_list_idle):
+            self.frame.index = 0
 
-    #extracts images from sprite sheet
-    def load_images(self):
-        size = self.sprite_sheet.get_height()
-        animation_list = []
-        for x in range(animation_steps):
-            temp = self.sprite_sheet.subsurface(x * size, 0, size, size)
-            animation_list.append(temp)
-        return animation_list
-    
-    
-
-    def play_animation(self):
+    def play_shooting_animation(self):
         #update image
-        self.original_image = self.animation_list[self.frame_index]
+        self.original_image = self.animation_list_shooting[self.frame_index]
         #check if enough time has passed since last update
         if pygame.time.get_ticks() - self.update_time > animation_delay:
             self.update_time = pygame.time.get_ticks()
             self.frame_index += 1
-            #check if animation ahs finished
-            if self.frame_index >= len(self.animation_list):
+            #check if animation has finished
+            if self.frame_index >= len(self.animation_list_shooting):
                 self.frame_index = 0
                 self.last_shot = pygame.time.get_ticks()
                 self.target = None
+    
+
+    def load_images_idle(self, spritesheet_idle):
+        animation_list_idle = []
+        for x in range(animation_steps):
+            temp = spritesheet_idle.subsurface(x * 96, 0, size, size)
+            animation_list_idle.append(temp)
+        return animation_list_idle
+    
+    def load_images_shooting(self, spritesheet_shooting):
+        animation_list_shooting = []
+        for x in range(animation_steps_shooting):
+            temp = spritesheet_shooting.subsurface(x * 96, 0, size, size)
+            animation_list_shooting.append(temp)
+        return animation_list_shooting
     
     def pick_target(self, enemy_group):
         #find an enemy to target
@@ -412,18 +464,19 @@ class Tower(pygame.sprite.Sprite):
 
                 self.angle = math.degrees(math.atan2(-y_dist, x_dist)) 
 
-
-    def update(self, enemy_group):
-        if self.target:
-            self.play_animation()
-        else:
-            if pygame.time.get_ticks() - self.last_shot > self.cooldown:
-                self.pick_target(enemy_group)
+                self.shooting = True
 
     def upgrade(self):
         self.upgrade_level += 1
-        self.range = TURRET_DATA[self.upgrade_level-1].get("range")
-        self.cooldown = TURRET_DATA[self.upgrade_level-1].get("cooldown")
+        self.range = TOWER_DATA[self.upgrade_level-1].get("range")
+        self.cooldown = TOWER_DATA[self.upgrade_level-1].get("cooldown")
+
+        #upgrade tower image
+        self.animation_list_idle = self.load_images_idle(self.sprite_sheet_idle[self.upgrade_level-1])
+
+        self.animation_list_shooting = self.load_images_shooting(self.sprite_sheet_shooting[self.upgrade_level-1])
+
+        self.original_image = self.animation_list_idle[self.frame_index]
 
         #change the circle for the new level
         self.range_image = pygame.Surface((self.range * 2, self.range * 2))
@@ -434,15 +487,14 @@ class Tower(pygame.sprite.Sprite):
         self.range_rect = self.range_image.get_rect()
         self.range_rect.center = self.rect.center
 
-
-    
-    #drawing function for transparent range circle
     def draw(self, surface):
         self.image = pygame.transform.rotate(self.original_image, self.angle - 90)
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
         if self.selected:
             surface.blit(self.range_image, self.range_rect)
+
+
 
 #creating buttons
 class Buttons(pygame.sprite.Sprite):
@@ -479,6 +531,8 @@ enemy_group = pygame.sprite.Group()
 
 tower_group = pygame.sprite.Group()
 
+weapons_group = pygame.sprite.Group()
+
 waypoints = [
     (640, 0),
     (640, 190),
@@ -494,13 +548,13 @@ waypoints = [
 
 
 #creating button to place the tower
-tower_button = Buttons(cols*pixel_size + 30, 120, buy_turret_image, True)
+tower_button = Buttons(cols*pixel_size + 30, 120, buy_tower_image, True)
 
 #creating button to cancel placing the tower
-cancel_button = Buttons(cols*pixel_size + 50, 180, cancel_turret_image, True)
+cancel_button = Buttons(cols*pixel_size + 50, 180, cancel_tower_image, True)
 
 #creating button to cancel placing the tower
-upgrade_button = Buttons(cols*pixel_size + 5, 180, upgrade_turret_image, True)
+upgrade_button = Buttons(cols*pixel_size + 5, 180, upgrade_tower_image, True)
 
 
 # Loop until the user clicks the close button.
@@ -521,23 +575,23 @@ while not done:
         mouse_pos = pygame.mouse.get_pos()
         #check if mouse is on the game area
         if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
-            #checks if player can place turret
-            if placing_turrets == True:
-                create_turret(mouse_pos)
+            #checks if player can place tower
+            if placing_towers == True:
+                create_tower(mouse_pos)
             else: 
-                selected_turret = select_turret(mouse_pos)
+                selected_tower = select_tower(mouse_pos)
         
     # --- Game logic should go here
     #updating all sprites
     all_sprites.update()
 
-    #updating towers
-    tower_group.update(enemy_group)
+    # updating towers
+    weapons_group.update(enemy_group)
 
     
-    #highlight selected turret
-    if selected_turret:
-        selected_turret.selected = True
+    #highlight selected tower
+    if selected_tower:
+        selected_tower.selected = True
     # --- Screen-clearing code goes here
  
     # Here, we clear the screen to white. Don't put other drawing commands
@@ -561,8 +615,8 @@ while not done:
     #draw tower
     tower_group.draw(screen)
 
-    for tower in tower_group:
-        tower.draw(screen)
+    for weapon in weapons_group:
+        weapon.draw(screen)
 
     #spawn enemies
     if pygame.time.get_ticks()- last_enemy_spawn > spawn_cooldown:
@@ -576,15 +630,15 @@ while not done:
     enemy_group.update()
 
     if tower_button.draw(screen):
-        placing_turrets = True
+        placing_towers = True
     #if placing turrets then show cancel button as well
-    if placing_turrets == True:
+    if placing_towers == True:
         if cancel_button.draw(screen):
-            placing_turrets = False    
-    if selected_turret:
-        if selected_turret.upgrade_level < TURRET_MAXLVL:
+            placing_towers = False    
+    if selected_tower:
+        if selected_tower.upgrade_level < TOWER_MAXLVL:
             if upgrade_button.draw(screen):
-                selected_turret.upgrade()
+                selected_tower.upgrade()
 
 
 
