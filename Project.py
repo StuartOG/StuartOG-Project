@@ -209,7 +209,6 @@ map_image = pygame.image.load('assets/levelv3.png').convert_alpha()
 #turret spritesheets
 turret_sheet = pygame.image.load('assets/turret_1.png').convert_alpha()
 #cursor turret
-
 cursor_turret_image = pygame.image.load('assets/cursor_turret.png').convert_alpha()
 #enemy
 enemy_images = {

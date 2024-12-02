@@ -218,13 +218,13 @@ enemy_images = {
 
 weapon_spritesheets_idle = []
 for x in range(1, TOWER_MAXLVL+1):
-    weapon_idle_sheet = pygame.image.load(f'assets/lvl{x}weaponidle.PNG').convert_alpha(),
+    weapon_idle_sheet = pygame.image.load(f'assets/lvl{x}weaponidle.PNG').convert_alpha()
     weapon_spritesheets_idle.append(weapon_idle_sheet)
 list(weapon_spritesheets_idle)
 
 weapon_spritesheets_shooting = []
 for x in range(1, TOWER_MAXLVL+1):
-    weapon_shooting_sheet = pygame.image.load(f'assets/lvl{x}weaponshooting.PNG').convert_alpha(),
+    weapon_shooting_sheet = pygame.image.load(f'assets/lvl{x}weaponshooting.PNG').convert_alpha()
     weapon_spritesheets_shooting.append(weapon_shooting_sheet)
 list(weapon_spritesheets_shooting)
 
@@ -382,10 +382,10 @@ class Weapons(pygame.sprite.Sprite):
 
         #idle animation variables
         self.sprite_sheet_idle = spritesheets_idle
-        self.animation_list_idle = self.load_images_idle(spritesheets_idle[self.upgrade_level-1])
+        self.animation_list_idle = self.load_images_idle(self.sprite_sheet_idle[self.upgrade_level - 1])
         #shooting animation variables
         self.sprite_sheet_shooting = spritesheets_shooting
-        self.animation_list_shooting = self.load_images_shooting(self.sprite_sheet_shooting[self.upgrade_level-1])
+        self.animation_list_shooting = self.load_images_shooting(self.sprite_sheet_shooting[self.upgrade_level - 1])
         #position variables
         self.tile_x = tile_x
         self.tile_y = tile_y
@@ -395,7 +395,7 @@ class Weapons(pygame.sprite.Sprite):
 
         #update image
         self.angle = 90
-        self. original_image = self.animation_list_idle[self.frame_index]
+        self.original_image = self.animation_list_idle[self.frame_index]
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
@@ -439,15 +439,17 @@ class Weapons(pygame.sprite.Sprite):
     def load_images_idle(self, spritesheet_idle):
         animation_list_idle = []
         for x in range(animation_steps):
-            temp = spritesheet_idle.subsurface(x * 96, 0, size, size)
-            animation_list_idle.append(temp)
+            if spritesheet_idle.get_width() >= (x + 1) * 96:
+                temp_img = spritesheet_idle.subsurface(x * 96, 0, 96, 96)
+                animation_list_idle.append(temp_img)
         return animation_list_idle
     
     def load_images_shooting(self, spritesheet_shooting):
         animation_list_shooting = []
         for x in range(animation_steps_shooting):
-            temp = spritesheet_shooting.subsurface(x * 96, 0, size, size)
-            animation_list_shooting.append(temp)
+            if spritesheet_shooting.get_width() >= (x + 1) * 96:
+                temp_img = spritesheet_shooting.subsurface(x * 96, 0, 96, 96)
+                animation_list_shooting.append(temp_img)
         return animation_list_shooting
     
     def pick_target(self, enemy_group):
