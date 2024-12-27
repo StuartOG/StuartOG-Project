@@ -206,7 +206,7 @@ map_image = pygame.image.load('assets/levelv3.png').convert_alpha()
 #turret spritesheets
 tower_sheet = pygame.image.load('assets/towers_images.png').convert_alpha()
 #cursor turret
-cursor_tower_image = pygame.image.load('assets/cursor_tower.png').convert_alpha()
+cursor_tower_image = pygame.image.load('assets/tower_lvl1.png').convert_alpha()
 #enemy
 enemy_images = {
     "tier 1" : pygame.image.load('assets/enemy_1.png').convert_alpha(),
@@ -228,11 +228,12 @@ for x in range(1, TOWER_MAXLVL+1):
     weapon_spritesheets_shooting.append(weapon_shooting_sheet)
 list(weapon_spritesheets_shooting)
 
-tower_images = {
-    "lvl1" : pygame.image.load('assets/cursor_tower.png').convert_alpha(),
-    "lvl2" : pygame.image.load('assets/tower_lvl2.PNG').convert_alpha(),
-    "lvl3" : pygame.image.load('assets/tower_lvl3.PNG').convert_alpha(),
-}
+tower_images = []
+for x in range(1, TOWER_MAXLVL+1):
+    tower_image = pygame.image.load(f'assets/tower_lvl{x}.PNG').convert_alpha()
+    tower_images.append(tower_image)
+
+
 #buy turret button
 buy_tower_image = pygame.image.load('assets/buy_tower.png').convert_alpha()
 #cancel buying turret button
@@ -363,13 +364,15 @@ class Tower(pygame.sprite.Sprite):
         #calculate center coordinates
         self.x = (self.tile_x + 0.5) * pixel_size
         self.y = (self.tile_y + 0.5) * pixel_size
-
-        self.image = images.get(tower_level)
+        
+        self.tower_level = tower_level
+        self.image = images.get(self.tower_level-1)
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
     def upgrade(self):
         self.upgrade_level += 1
+        self.image = self.image.get(self.tower_level+self.upgrade_level)
 
 class Weapons(pygame.sprite.Sprite):
     def __init__(self, spritesheets_idle, spritesheets_shooting, tile_x, tile_y):
@@ -473,7 +476,7 @@ class Weapons(pygame.sprite.Sprite):
         self.range = TOWER_DATA[self.upgrade_level-1].get("range")
         self.cooldown = TOWER_DATA[self.upgrade_level-1].get("cooldown")
 
-        #upgrade tower image
+        #upgrade weapon image
         self.animation_list_idle = self.load_images_idle(self.sprite_sheet_idle[self.upgrade_level-1])
 
         self.animation_list_shooting = self.load_images_shooting(self.sprite_sheet_shooting[self.upgrade_level-1])
@@ -587,7 +590,9 @@ while not done:
     #updating all sprites
     all_sprites.update()
 
-    # updating towers
+
+
+    # updating weapons
     weapons_group.update(enemy_group)
 
     
