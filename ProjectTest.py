@@ -232,7 +232,7 @@ tower_images = []
 for x in range(1, TOWER_MAXLVL+1):
     tower_image = pygame.image.load(f'assets/tower_lvl{x}.PNG').convert_alpha()
     tower_images.append(tower_image)
-
+list(tower_images)
 
 #buy turret button
 buy_tower_image = pygame.image.load('assets/buy_tower.png').convert_alpha()
@@ -297,7 +297,7 @@ def create_tower(mouse_pos):
             tower_level = "lvl1"
             new_tower = Tower(tower_level, tower_images, mouse_tile_x, mouse_tile_y)
             tower_group.add(new_tower)
-            new_weapon = Weapons(weapon_spritesheets_idle, weapon_spritesheets_shooting, mouse_tile_x, mouse_tile_y)
+            new_weapon = Weapon(weapon_spritesheets_idle, weapon_spritesheets_shooting, mouse_tile_x, mouse_tile_y)
             weapons_group.add(new_weapon)
 
 def select_tower(mouse_pos):
@@ -306,7 +306,13 @@ def select_tower(mouse_pos):
     for tower in tower_group:
         if (mouse_tile_x, mouse_tile_y) == (tower.tile_x, tower.tile_y):
             return tower
-
+        
+def select_weapon(mouse_pos):
+    mouse_tile_x = mouse_pos[0] // pixel_size
+    mouse_tile_y = mouse_pos[1] // pixel_size
+    for weapon in weapons_group:
+        if (mouse_tile_x, mouse_tile_y) == (weapon.tile_x, weapon.tile_y):
+            return weapon
 
 #Creating Enemy Class
 class Enemy(pygame.sprite.Sprite):
@@ -366,15 +372,16 @@ class Tower(pygame.sprite.Sprite):
         self.y = (self.tile_y + 0.5) * pixel_size
         
         self.tower_level = tower_level
-        self.image = images.get(self.tower_level-1)
+        self.images = images
+        self.image = self.images[self.upgrade_level - 1]
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
     def upgrade(self):
         self.upgrade_level += 1
-        self.image = self.image.get(self.tower_level+self.upgrade_level)
+        self.image = self.images[self.upgrade_level - 1]
 
-class Weapons(pygame.sprite.Sprite):
+class Weapon(pygame.sprite.Sprite):
     def __init__(self, spritesheets_idle, spritesheets_shooting, tile_x, tile_y):
         super().__init__()
 
@@ -394,10 +401,10 @@ class Weapons(pygame.sprite.Sprite):
         self.tile_y = tile_y
         #calculate center coordinates
         self.x = (self.tile_x + 0.5) * pixel_size
-        self.y = (self.tile_y + 0.5) * pixel_size
+        self.y = (self.tile_y + 0.15) * pixel_size
 
         #update image
-        self.angle = 90
+        self.angle = 0
         self.original_image = self.animation_list_idle[self.frame_index]
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect()
@@ -451,8 +458,8 @@ class Weapons(pygame.sprite.Sprite):
         animation_list_shooting = []
         for x in range(animation_steps_shooting):
             if spritesheet_shooting.get_width() >= (x + 1) * 96:
-                temp_img = spritesheet_shooting.subsurface(x * 96, 0, 96, 96)
-                animation_list_shooting.append(temp_img)
+                temp = spritesheet_shooting.subsurface(x * 96, 0, 96, 96)
+                animation_list_shooting.append(temp)
         return animation_list_shooting
     
     def pick_target(self, enemy_group):
@@ -491,6 +498,13 @@ class Weapons(pygame.sprite.Sprite):
         self.range_image.set_alpha(100)
         self.range_rect = self.range_image.get_rect()
         self.range_rect.center = self.rect.center
+
+    def update(self, enemy_group):
+        if self.target:
+            self.play_shooting_animation()
+        else:
+            if pygame.time.get_ticks() - self.last_shot > self.cooldown:
+                self.pick_target(enemy_group)
 
     def draw(self, surface):
         self.image = pygame.transform.rotate(self.original_image, self.angle - 90)
@@ -585,7 +599,8 @@ while not done:
                 create_tower(mouse_pos)
             else: 
                 selected_tower = select_tower(mouse_pos)
-        
+                selected_weapon = select_weapon(mouse_pos)
+                                                 
     # --- Game logic should go here
     #updating all sprites
     all_sprites.update()
@@ -622,8 +637,7 @@ while not done:
     #draw tower
     tower_group.draw(screen)
 
-    for weapon in weapons_group:
-        weapon.draw(screen)
+    weapons_group.draw(screen)
 
     #spawn enemies
     if pygame.time.get_ticks()- last_enemy_spawn > spawn_cooldown:
@@ -646,6 +660,7 @@ while not done:
         if selected_tower.upgrade_level < TOWER_MAXLVL:
             if upgrade_button.draw(screen):
                 selected_tower.upgrade()
+                selected_weapon.upgrade()
 
 
 
