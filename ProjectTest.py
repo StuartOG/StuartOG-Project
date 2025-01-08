@@ -180,6 +180,9 @@ cols = 14
 pixel_size = 64
 side_panel = 200
 
+health = 100
+cash = 500
+
 spawn_cooldown = 400
 
 size = (cols*pixel_size + side_panel, rows*pixel_size)
@@ -248,6 +251,8 @@ upgrade_tower_image = pygame.image.load('assets/upgrade_tower.png').convert_alph
 class Map():
     def __init__(self, data, map_image):    
         self.level = 1
+        self.health = health
+        self.cash = cash
         self.tile_map = []
         self.level_data = data
         self.image = map_image
@@ -387,6 +392,7 @@ class Weapon(pygame.sprite.Sprite):
 
         #animation variables
         self.frame_index = 0
+        self.frame_index_shooting = 0
         self.update_time = pygame.time.get_ticks()
         self.upgrade_level = 1
 
@@ -434,14 +440,14 @@ class Weapon(pygame.sprite.Sprite):
 
     def play_shooting_animation(self):
         #update image
-        self.original_image = self.animation_list_shooting[self.frame_index]
+        self.original_image = self.animation_list_shooting[self.frame_index_shooting]
         #check if enough time has passed since last update
         if pygame.time.get_ticks() - self.update_time > animation_delay:
             self.update_time = pygame.time.get_ticks()
-            self.frame_index += 1
+            self.frame_index_shooting += 1
             #check if animation has finished
-            if self.frame_index >= len(self.animation_list_shooting):
-                self.frame_index = 0
+            if self.frame_index_shooting >= len(self.animation_list_shooting):
+                self.frame_index_shooting = 0
                 self.last_shot = pygame.time.get_ticks()
                 self.target = None
     
@@ -458,8 +464,8 @@ class Weapon(pygame.sprite.Sprite):
         animation_list_shooting = []
         for x in range(animation_steps_shooting):
             if spritesheet_shooting.get_width() >= (x + 1) * 96:
-                temp = spritesheet_shooting.subsurface(x * 96, 0, 96, 96)
-                animation_list_shooting.append(temp)
+                temp_img = spritesheet_shooting.subsurface(x * 96, 0, 96, 96)
+                animation_list_shooting.append(temp_img)
         return animation_list_shooting
     
     def pick_target(self, enemy_group):
@@ -507,8 +513,8 @@ class Weapon(pygame.sprite.Sprite):
                 self.pick_target(enemy_group)
 
     def draw(self, surface):
-        self.image = pygame.transform.rotate(self.original_image, self.angle - 90)
-        self.rect = self.image.get_rect()
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
+        self.rect = self.original_image.get_rect()
         self.rect.center = (self.x, self.y)
         if self.selected:
             surface.blit(self.range_image, self.range_rect)
@@ -638,6 +644,9 @@ while not done:
     tower_group.draw(screen)
 
     weapons_group.draw(screen)
+
+    for weapon in weapons_group:
+      weapon.draw(screen)
 
     #spawn enemies
     if pygame.time.get_ticks()- last_enemy_spawn > spawn_cooldown:
