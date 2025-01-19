@@ -38,7 +38,7 @@ ENEMY_SPAWN_DATA = [
     "tier 1": 15,
     "tier 2": 0,
     "tier 3": 0,
-    "tier 4": 0
+    "tier 4": 1
   },
   {
     #2
@@ -181,20 +181,25 @@ pixel_size = 64
 side_panel = 200
 
 health = 100
-cash = 500
+cash = 650
 
-spawn_cooldown = 400
+spawn_cooldown = 600
 
 size = (cols*pixel_size + side_panel, rows*pixel_size)
 screen = pygame.display.set_mode(size)
 
+buy_cost = 200
+upgrade_cost = 100
+kill_reward = 5
 animation_steps = 8
 animation_delay = 15
 animation_steps_shooting = 29
+damage = 5
  
 pygame.display.set_caption("Otis' Computer Science Project")
 
 #game variables
+level_started = False
 last_enemy_spawn = pygame.time.get_ticks()
 placing_towers = False
 selected_tower = None
@@ -202,6 +207,14 @@ selected_tower = None
 #load json data for level
 with open('level.tmj') as file:
     world_data = json.load(file)
+
+text_font = pygame.font.SysFont("Consolas", 24, bold = True)
+large_font = pygame.font.SysFont("Consolas", 36)
+
+
+def draw_text(text, font, text_colour, x_pos, y_pos):
+  img = font.render(text, True, text_colour)
+  screen.blit(img, (x_pos, y_pos))
 
 #importing the enemy image
 #map
@@ -243,6 +256,8 @@ buy_tower_image = pygame.image.load('assets/buy_tower.png').convert_alpha()
 cancel_tower_image = pygame.image.load('assets/cancel.png').convert_alpha()
 #upgrade turret turret button
 upgrade_tower_image = pygame.image.load('assets/upgrade_tower.png').convert_alpha()
+begin_round_image = pygame.image.load('assets/begin.png').convert_alpha()
+
 
 
 
@@ -304,6 +319,7 @@ def create_tower(mouse_pos):
             tower_group.add(new_tower)
             new_weapon = Weapon(weapon_spritesheets_idle, weapon_spritesheets_shooting, mouse_tile_x, mouse_tile_y)
             weapons_group.add(new_weapon)
+            world.cash -= buy_cost
 
 def select_tower(mouse_pos):
     mouse_tile_x = mouse_pos[0] // pixel_size
@@ -336,24 +352,29 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.center = self.position
 
     #adding movement to the enemy
-    def update(self):
-        self.move()
+    def update(self, world):
+        self.move(world)
         self.rotate()
+        self.check_alive(world)
     
-    def move(self):
+    def move(self, world):
+      if self.target_waypoint < len(self.waypoints):
         self.target = Vector2(self.waypoints[self.target_waypoint])
         self.movement = self.target - self.position
-        dist = self.movement.length()
-        if dist >= self.speed:
-            self.position += self.movement.normalize()
-        else:
-            if self.target_waypoint <= len(waypoints):
-                if dist != 0:
-                    self.position += self.movement.normalize() 
-                self.target_waypoint += 1
-            else: self.kill()
-        self.rect.center = self.position
-        dist = self.movement.length()
+      else:
+        #enemy has reached the end of the path
+        self.kill()
+        world.health -= 1
+
+      #calculate distance to target
+      dist = self.movement.length()
+      #check if remaining distance is greater than the enemy speed
+      if dist >= self.speed:
+        self.position += self.movement.normalize() * self.speed
+      else:
+        if dist != 0:
+          self.position += self.movement.normalize() * dist
+        self.target_waypoint += 1
     
     def rotate(self):
         dist = self.target - self.position
@@ -362,6 +383,11 @@ class Enemy(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect()
         self.rect.center = self.position
+
+    def check_alive(self, world):
+      if self.health <= 0:
+        world.cash += kill_reward
+        self.kill()
 
 #creating tower class            
 class Tower(pygame.sprite.Sprite):
@@ -474,15 +500,17 @@ class Weapon(pygame.sprite.Sprite):
         y_dist = 0
         #check distance to each enemy to see if it is in range
         for enemy in enemy_group:
+          if enemy.health > 0:
             x_dist = enemy.position[0] - self.x
             y_dist = enemy.position[1] - self.y
             dist = math.sqrt(x_dist ** 2 + y_dist ** 2)
             if dist < self.range:
                 self.target = enemy
 
-                self.angle = math.degrees(math.atan2(-y_dist, x_dist)) 
-
                 self.shooting = True
+
+                self.target.health -= damage
+                break
 
     def upgrade(self):
         self.upgrade_level += 1
@@ -516,6 +544,10 @@ class Weapon(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.original_image.get_rect()
         self.rect.center = (self.x, self.y)
+        if self.selected:
+            surface.blit(self.range_image, self.range_rect)
+
+    def draw_range(self, surface):
         if self.selected:
             surface.blit(self.range_image, self.range_rect)
 
@@ -581,7 +613,7 @@ cancel_button = Buttons(cols*pixel_size + 50, 180, cancel_tower_image, True)
 #creating button to cancel placing the tower
 upgrade_button = Buttons(cols*pixel_size + 5, 180, upgrade_tower_image, True)
 
-
+begin_button = Buttons(cols*pixel_size + 5, 300, begin_round_image, True)
 # Loop until the user clicks the close button.
 done = False
  
@@ -602,6 +634,7 @@ while not done:
         if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
             #checks if player can place tower
             if placing_towers == True:
+              if world.cash >= buy_cost:
                 create_tower(mouse_pos)
             else: 
                 selected_tower = select_tower(mouse_pos)
@@ -635,7 +668,8 @@ while not done:
     #draw level
     world.draw(screen)
     
-
+    draw_text(str(world.health), text_font, BLACK, 0, 0)
+    draw_text(str(world.cash), text_font, BLACK, 0, 20)
 
     #draw enemy
     enemy_group.draw(screen)
@@ -648,16 +682,21 @@ while not done:
     for weapon in weapons_group:
       weapon.draw(screen)
 
-    #spawn enemies
-    if pygame.time.get_ticks()- last_enemy_spawn > spawn_cooldown:
-        if world.spawned_enemies < len(world.enemy_list):   
-            enemy_type = world.enemy_list[world.spawned_enemies]
-            enemy = Enemy(enemy_type, enemy_images, waypoints)
-            enemy_group.add(enemy)
-            world.spawned_enemies += 1
-            last_enemy_spawn = pygame.time.get_ticks()
+    #check if level has been started or not
+    if level_started == False:
+      if begin_button.draw(screen):
+        level_started = True
+    else:
+      #spawn enemies
+      if pygame.time.get_ticks()- last_enemy_spawn > spawn_cooldown:
+          if world.spawned_enemies < len(world.enemy_list):   
+              enemy_type = world.enemy_list[world.spawned_enemies]
+              enemy = Enemy(enemy_type, enemy_images, waypoints)
+              enemy_group.add(enemy)
+              world.spawned_enemies += 1
+              last_enemy_spawn = pygame.time.get_ticks()
 
-    enemy_group.update()
+    enemy_group.update(world)
 
     if tower_button.draw(screen):
         placing_towers = True
@@ -666,10 +705,13 @@ while not done:
         if cancel_button.draw(screen):
             placing_towers = False    
     if selected_tower:
+        selected_weapon.draw_range(screen)
         if selected_tower.upgrade_level < TOWER_MAXLVL:
             if upgrade_button.draw(screen):
+              if world.cash >= upgrade_cost:
                 selected_tower.upgrade()
                 selected_weapon.upgrade()
+                world.cash -= upgrade_cost
 
 
 
