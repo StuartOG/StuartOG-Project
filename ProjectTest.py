@@ -35,14 +35,14 @@ TOWER_MAXLVL = 3
 ENEMY_SPAWN_DATA = [
   {
     #1
-    "tier 1": 15,
+    "tier 1": 10,
     "tier 2": 0,
     "tier 3": 0,
-    "tier 4": 1
+    "tier 4": 0
   },
   {
     #2
-    "tier 1": 30,
+    "tier 1": 20,
     "tier 2": 0,
     "tier 3": 0,
     "tier 4": 0
@@ -50,124 +50,124 @@ ENEMY_SPAWN_DATA = [
   {
     #3
     "tier 1": 20,
-    "tier 2": 5,
+    "tier 2": 3,
     "tier 3": 0,
     "tier 4": 0
   },
   
   {
-    "#4": {
+    #4
       "tier 1": 30,
       "tier 2": 15,
       "tier 3": 0,
       "tier 4": 0
-    }
+    
   },
   {
-    "#5": {
+    #5
       "tier 1": 5,
       "tier 2": 20,
       "tier 3": 0,
       "tier 4": 0
-    }
+    
   },
   {
-    "#6": {
+    #6
       "tier 1": 15,
       "tier 2": 15,
       "tier 3": 4,
       "tier 4": 0
-    }
+    
   },
   {
-    "#7": {
+    #7
       "tier 1": 20,
       "tier 2": 25,
       "tier 3": 5,
       "tier 4": 0
-    }
+    
   },
   {
-    "#8": {
+    #8
       "tier 1": 10,
       "tier 2": 20,
       "tier 3": 15,
       "tier 4": 0
-    }
+    
   },
   {
-    "#9": {
+    #9
       "tier 1": 15,
       "tier 2": 10,
       "tier 3": 5,
       "tier 4": 0
-    }
+    
   },
   {
-    "#10": {
+    #10
       "tier 1": 0,
       "tier 2": 100,
       "tier 3": 0,
       "tier 4": 0
-    }
+    
   },
   {
-    "#11": {
+    #11
       "tier 1": 5,
       "tier 2": 10,
       "tier 3": 12,
       "tier 4": 2
-    }
+    
   },
   {
-    "#12": {
+    #12
       "tier 1": 0,
       "tier 2": 15,
       "tier 3": 10,
       "tier 4": 5
-    }
+    
   },
   {
-    "#13": {
+    #13
       "tier 1": 20,
       "tier 2": 0,
       "tier 3": 25,
       "tier 4": 10
-    }
+    
   },
   {
-    "#14": {
+    #14
       "tier 1": 15,
       "tier 2": 15,
       "tier 3": 15,
       "tier 4": 15
-    }
+    
   },
   {
-    "#15": {
+    #15
       "tier 1": 25,
       "tier 2": 25,
       "tier 3": 25,
       "tier 4": 25
-    }
+    
   }
   ]
 
 ENEMY_DATA = {
     "tier 1": {
-    "health": 10,
+    "health": 5,
     "speed": 2
   },
     "tier 2": {
-    "health": 15,
+    "health": 10,
     "speed": 3
   },
     "tier 3": {
-    "health": 20,
+    "health": 15,
     "speed": 4
   },
     "tier 4": {
-    "health": 30,
+    "health": 25,
     "speed": 6
   }
 }
@@ -191,14 +191,18 @@ screen = pygame.display.set_mode(size)
 buy_cost = 200
 upgrade_cost = 100
 kill_reward = 5
+wave_reward = 100 
 animation_steps = 8
 animation_delay = 15
 animation_steps_shooting = 29
 damage = 5
+total_waves = 15
  
 pygame.display.set_caption("Otis' Computer Science Project")
 
 #game variables
+game_over = False
+game_outcome = 0
 level_started = False
 last_enemy_spawn = pygame.time.get_ticks()
 placing_towers = False
@@ -257,6 +261,7 @@ cancel_tower_image = pygame.image.load('assets/cancel.png').convert_alpha()
 #upgrade turret turret button
 upgrade_tower_image = pygame.image.load('assets/upgrade_tower.png').convert_alpha()
 begin_round_image = pygame.image.load('assets/begin.png').convert_alpha()
+restart_image = pygame.image.load('assets/restart.png').convert_alpha()
 
 
 
@@ -273,6 +278,8 @@ class Map():
         self.image = map_image
         self.enemy_list = []
         self.spawned_enemies = 0
+        self.killed_enemies = 0
+        self.missed_enemies = 0
        
     #end constructor
     def process_data(self):
@@ -290,8 +297,16 @@ class Map():
         #shuffle the list
         random.shuffle(self.enemy_list)
                 
-
+    def check_level_complete(self):
+      if (self.killed_enemies + self.missed_enemies) == len(self.enemy_list):
+        return True
     
+    def reset_level(self):
+      self.enemy_list = []
+      self.spawned_enemies = 0
+      self.killed_enemies = 0
+      self.missed_enemies = 0
+
     def draw(self, surface):
         surface.blit(self.image, (0, 0))
 
@@ -365,6 +380,7 @@ class Enemy(pygame.sprite.Sprite):
         #enemy has reached the end of the path
         self.kill()
         world.health -= 1
+        world.missed_enemies += 1
 
       #calculate distance to target
       dist = self.movement.length()
@@ -386,6 +402,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def check_alive(self, world):
       if self.health <= 0:
+        world.killed_enemies += 1
         world.cash += kill_reward
         self.kill()
 
@@ -614,6 +631,10 @@ cancel_button = Buttons(cols*pixel_size + 50, 180, cancel_tower_image, True)
 upgrade_button = Buttons(cols*pixel_size + 5, 180, upgrade_tower_image, True)
 
 begin_button = Buttons(cols*pixel_size + 5, 300, begin_round_image, True)
+
+restart_button = Buttons(310, 300, restart_image, True)
+
+
 # Loop until the user clicks the close button.
 done = False
  
@@ -641,18 +662,26 @@ while not done:
                 selected_weapon = select_weapon(mouse_pos)
                                                  
     # --- Game logic should go here
-    #updating all sprites
-    all_sprites.update()
+
+    if game_over == False:
+      #check if player has lost
+      if world.health <= 0:
+        game_over = True
+        game_outcome = -1
+      if world.level > total_waves:
+        game_over = True
+        game_outcome = 1
 
 
+      enemy_group.update(world)
 
-    # updating weapons
-    weapons_group.update(enemy_group)
+      # updating weapons
+      weapons_group.update(enemy_group)
 
-    
-    #highlight selected tower
-    if selected_tower:
-        selected_tower.selected = True
+      
+      #highlight selected tower
+      if selected_tower:
+          selected_tower.selected = True
     # --- Screen-clearing code goes here
  
     # Here, we clear the screen to white. Don't put other drawing commands
@@ -669,7 +698,8 @@ while not done:
     world.draw(screen)
     
     draw_text(str(world.health), text_font, BLACK, 0, 0)
-    draw_text(str(world.cash), text_font, BLACK, 0, 20)
+    draw_text(str(world.cash), text_font, BLACK, 0, 25)
+    draw_text(str(world.level), text_font, BLACK, 0, 50)
 
     #draw enemy
     enemy_group.draw(screen)
@@ -682,13 +712,15 @@ while not done:
     for weapon in weapons_group:
       weapon.draw(screen)
 
-    #check if level has been started or not
-    if level_started == False:
-      if begin_button.draw(screen):
-        level_started = True
-    else:
-      #spawn enemies
-      if pygame.time.get_ticks()- last_enemy_spawn > spawn_cooldown:
+
+    if game_over == False:
+      #check if level has been started or not
+      if level_started == False:
+        if begin_button.draw(screen):
+          level_started = True
+      else:
+        #spawn enemies
+        if pygame.time.get_ticks()- last_enemy_spawn > spawn_cooldown:
           if world.spawned_enemies < len(world.enemy_list):   
               enemy_type = world.enemy_list[world.spawned_enemies]
               enemy = Enemy(enemy_type, enemy_images, waypoints)
@@ -696,7 +728,36 @@ while not done:
               world.spawned_enemies += 1
               last_enemy_spawn = pygame.time.get_ticks()
 
-    enemy_group.update(world)
+    else:
+      pygame.draw.rect(screen, WHITE, (200, 200, 400, 200), border_radius = 30)
+      if game_outcome == -1:
+        draw_text("GAME OVER!", large_font, BLACK, 310, 230)
+      elif game_outcome == 1:
+        draw_text("YOU WIN!", large_font, BLACK, 315, 230)
+      #restart level
+      if restart_button.draw(screen):
+        game_over = False
+        level_start = False
+        placing_towers = False
+        selected_tower = None
+        last_enemy_spawn = pygame.time.get_ticks()
+        world = Map(world_data, map_image)
+        world.process_data()
+        world.process_enemies()
+        #empty groups
+        enemy_group.empty()
+        tower_group.empty()
+
+
+    #check if wave is finsihed
+    if world.check_level_complete() == True:
+      world.cash += wave_reward
+      world.level += 1
+      level_started = False
+      last_enemy_spawn = pygame.time.get_ticks()
+      world.reset_level()
+      world.process_enemies()
+
 
     if tower_button.draw(screen):
         placing_towers = True
