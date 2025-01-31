@@ -458,6 +458,7 @@ class Weapon(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
+        self.selected = False
 
 
         self.upgrade_level = 1
@@ -493,6 +494,7 @@ class Weapon(pygame.sprite.Sprite):
                 self.frame_index_shooting = 0
                 self.last_shot = pygame.time.get_ticks()
                 self.target = None
+
     
 
     def load_images_idle(self, spritesheet_idle):
@@ -766,7 +768,7 @@ while not done:
         if cancel_button.draw(screen):
             placing_towers = False    
     if selected_tower:
-        selected_weapon.draw_range(screen)
+        selected_weapon.selected = True
         if selected_tower.upgrade_level < TOWER_MAXLVL:
             if upgrade_button.draw(screen):
               if world.cash >= upgrade_cost:

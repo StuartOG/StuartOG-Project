@@ -21,6 +21,7 @@ side_panel = 200
 size = (cols*pixel_size + side_panel, rows*pixel_size)
 
 placing_towers = False
+selected_tower = None
 
 #load json data for level
 with open('level.tmj') as file:
@@ -84,12 +85,12 @@ def create_tower(mouse_pos):
             tower_group.add(new_tower)
 
 
-# def select_tower(mouse_pos):
-#     mouse_tile_x = mouse_pos[0] // pixel_size
-#     mouse_tile_y = mouse_pos[1] // pixel_size
-#     for tower in tower_group:
-#         if (mouse_tile_x, mouse_tile_y) == (tower.tile_x, tower.tile_y):
-#             return tower
+def select_tower(mouse_pos):
+    mouse_tile_x = mouse_pos[0] // pixel_size
+    mouse_tile_y = mouse_pos[1] // pixel_size
+    for tower in tower_group:
+        if (mouse_tile_x, mouse_tile_y) == (tower.tile_x, tower.tile_y):
+            return tower
 
 
 
@@ -147,6 +148,7 @@ class Tower(pygame.sprite.Sprite):
         self.image = pygame.Surface([self.width, self.length])
         self.image.fill(BLACK) 
         self.rect = self.image.get_rect()
+        self.selected = False
 
         #position variables
         self.tile_x = tile_x
@@ -167,7 +169,8 @@ class Tower(pygame.sprite.Sprite):
         self.range_rect.center = self.rect.center
 
     def draw(self, surface):
-        surface.blit(self.range_image, self.range_rect)
+        if self.selected == True:
+            surface.blit(self.range_image, self.range_rect)
 
 class Buttons(pygame.sprite.Sprite):
     def __init__(self, x, y, image, single_click):
@@ -191,8 +194,8 @@ class Buttons(pygame.sprite.Sprite):
 
         if pygame.mouse.get_pressed()[0] == 0:
             self.clicked = False
-    
-        surface.blit(self.image, self.rect)
+
+            surface.blit(self.image, self.rect)
 
         return action
 done = False
@@ -241,13 +244,26 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
+        
+        #mouse click
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+            #check if mouse is on the game area
+            if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
+                if placing_towers == True:
+                    create_tower(mouse_pos)
+                else:
+                    selected_tower = select_tower(mouse_pos)
 
-            # selected_tower = select_tower(mouse_pos)
+
     
     # --- Game logic should go here
     
         
     all_sprites.update()
+    
+    if selected_tower:
+        selected_tower.selected = True
     
 
     # --- Screen-clearing code goes here
@@ -273,13 +289,7 @@ while not done:
 
 
 
-    #mouse click
-    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        mouse_pos = pygame.mouse.get_pos()
-        #check if mouse is on the game area
-        if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
-            if placing_towers == True:
-                create_tower(mouse_pos)
+
     
 
     if tower_button.draw(screen):
