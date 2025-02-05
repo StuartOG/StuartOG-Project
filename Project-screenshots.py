@@ -35,6 +35,8 @@ pygame.display.set_caption("Otis' Computer Science Project")
 
 enemy_image = pygame.image.load('assets/enemy_1.png').convert_alpha()
 
+tower_image = pygame.image.load('assets/tower_lvl1.png').convert_alpha()
+
 #map
 map_image = pygame.image.load('assets/levelv3.png').convert_alpha()
 
@@ -81,7 +83,7 @@ def create_tower(mouse_pos):
                 space_is_free = False
             #if it is a free space then create turret
         if space_is_free == True:
-            new_tower = Tower(30, 40, mouse_tile_x, mouse_tile_y)
+            new_tower = Tower(tower_image, mouse_tile_x, mouse_tile_y)
             tower_group.add(new_tower)
 
 
@@ -92,6 +94,9 @@ def select_tower(mouse_pos):
         if (mouse_tile_x, mouse_tile_y) == (tower.tile_x, tower.tile_y):
             return tower
 
+def clear_selected_tower():
+    for tower in tower_group:
+        tower.selected = False
 
 
 #creating enemy class
@@ -111,10 +116,10 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.center = self.position
 
 
-    #adding movement to the enemy
+    #adding movement and rotation to the enemy
     def update(self):
         self.move()
-        #self.rotate()
+        self.rotate()
     
     def move(self):
         self.target = Vector2(self.waypoints[self.target_waypoint])
@@ -140,13 +145,10 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.center = self.position
 
 class Tower(pygame.sprite.Sprite):
-    def __init__(self, s_width, s_length, tile_x, tile_y) -> None:
+    def __init__(self, image, tile_x, tile_y) -> None:
         super().__init__()
-        self.width = s_width
         self.range = 90
-        self.length = s_length
-        self.image = pygame.Surface([self.width, self.length])
-        self.image.fill(BLACK) 
+        self.image = image
         self.rect = self.image.get_rect()
         self.selected = False
 
@@ -250,10 +252,15 @@ while not done:
             mouse_pos = pygame.mouse.get_pos()
             #check if mouse is on the game area
             if mouse_pos[0] < cols*pixel_size and mouse_pos[1] < rows*pixel_size:
+
+                #clear selected tower
+                selected_tower = None
+                clear_selected_tower()
+
                 if placing_towers == True:
                     create_tower(mouse_pos)
                 else:
-                    selected_tower = select_tower(mouse_pos)
+                    selected_tower = select_tower(mouse_pos) 
 
 
     
@@ -264,7 +271,7 @@ while not done:
     
     if selected_tower:
         selected_tower.selected = True
-    
+
 
     # --- Screen-clearing code goes here
  

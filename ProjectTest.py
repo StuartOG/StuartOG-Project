@@ -15,17 +15,17 @@ GREY = (128, 128, 128)
 TOWER_DATA = [
     {   
         #1
-        "range": 120,
+        "range": 160,
         "cooldown": 1500,
     },
     {
         #2
-        "range": 140,
+        "range": 190,
         "cooldown": 1200,
     },
     {
         #3
-        "range": 160,
+        "range": 220,
         "cooldown": 1000,
     },
 ]
@@ -223,9 +223,9 @@ def draw_text(text, font, text_colour, x_pos, y_pos):
 #importing the enemy image
 #map
 map_image = pygame.image.load('assets/levelv3.png').convert_alpha()
-#turret spritesheets
+#tower spritesheets
 tower_sheet = pygame.image.load('assets/towers_images.png').convert_alpha()
-#cursor turret
+#cursor tower
 cursor_tower_image = pygame.image.load('assets/tower_lvl1.png').convert_alpha()
 #enemy
 enemy_images = {
@@ -254,11 +254,11 @@ for x in range(1, TOWER_MAXLVL+1):
     tower_images.append(tower_image)
 list(tower_images)
 
-#buy turret button
+#buy tower button
 buy_tower_image = pygame.image.load('assets/buy_tower.png').convert_alpha()
-#cancel buying turret button
+#cancel buying tower button
 cancel_tower_image = pygame.image.load('assets/cancel.png').convert_alpha()
-#upgrade turret turret button
+#upgrade tower button
 upgrade_tower_image = pygame.image.load('assets/upgrade_tower.png').convert_alpha()
 begin_round_image = pygame.image.load('assets/begin.png').convert_alpha()
 restart_image = pygame.image.load('assets/restart.png').convert_alpha()
@@ -322,12 +322,12 @@ def create_tower(mouse_pos):
     mouse_tile_num = (mouse_tile_y * cols) + mouse_tile_x
     #check if that tile is grass
     if world.tile_map[mouse_tile_num] == 25:
-        #check that there isn't already a turret there
+        #check that there isn't already a tower there
         space_is_free = True
         for tower in tower_group:
             if (mouse_tile_x, mouse_tile_y) == (tower.tile_x, tower.tile_y):
                 space_is_free = False
-            #if it is a free space then create turret
+            #if it is a free space then create tower
         if space_is_free == True:
             tower_level = "lvl1"
             new_tower = Tower(tower_level, tower_images, mouse_tile_x, mouse_tile_y)
@@ -349,6 +349,12 @@ def select_weapon(mouse_pos):
     for weapon in weapons_group:
         if (mouse_tile_x, mouse_tile_y) == (weapon.tile_x, weapon.tile_y):
             return weapon
+        
+def clear_selected_tower_weapon():
+    for tower in tower_group:
+        tower.selected = False
+    for weapon in weapons_group:
+        weapon.selected = False
 
 #Creating Enemy Class
 class Enemy(pygame.sprite.Sprite):
@@ -411,7 +417,6 @@ class Tower(pygame.sprite.Sprite):
     def __init__(self, tower_level, images, tile_x, tile_y) -> None:
         super().__init__()
         self.upgrade_level = 1
-        self.angle = 0
         #position variables
         self.tile_x = tile_x
         self.tile_y = tile_y
@@ -662,7 +667,8 @@ while not done:
             else: 
                 selected_tower = select_tower(mouse_pos)
                 selected_weapon = select_weapon(mouse_pos)
-                                                 
+            clear_selected_tower_weapon()                                     
+
     # --- Game logic should go here
 
     if game_over == False:
